@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Quest - Hall of Fame</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'leaderboard.css' %}">
+</head>
+<body>
+    <div class="grid-background"></div>
+
+    <div class="leaderboard-container">
+        <header class="leaderboard-header">
+            <h1 class="glitch-text">GLOBAL RANKINGS</h1>
+            <div class="rank-filters">
+                <button class="filter-btn active" data-rank="ALL">GLOBAL</button>
+                <button class="filter-btn" data-rank="Novice">NOVICE</button>
+                <button class="filter-btn" data-rank="Code Warrior">WARRIORS</button>
+                <button class="filter-btn" data-rank="Elite Architect">ARCHITECTS</button>
+            </div>
+        </header>
+
+        <div class="table-wrapper">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>RECRUIT NAME</th>
+                        <th>LEVEL</th>
+                        <th>RANK</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    {% for recruit in recruits %}
+                    <tr class="{% if recruit.user == request.user %}current-user-row{% endif %}">
+                        <td class="name-col">
+                            {% if forloop.first %}
+                                <i class="fas fa-crown gold"></i>
+                            {% else %}
+                                <span class="rank-number">#{{ forloop.counter }}</span>
+                            {% endif %}
+                            {{ recruit.full_name }}
+                        </td>
+                        <td class="level-col">LVL {{ recruit.unlocked_level }}</td>
+                        <td class="rank-col"><span class="rank-tag">{{ recruit.rank }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px;">NO DATA DETECTED IN TERMINAL</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer-actions">
+            <a href="{% url 'python_start' %}" class="back-btn">
+                <i class="fas fa-chevron-left"></i> RETURN TO MAP
+            </a>
+            
+            <div class="personal-rank-snap">
+                <span>YOUR STATUS: <strong>{{ request.user.recruit.rank|upper }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // HANDLE ASYNC FILTERING
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const tableBody = document.getElementById('leaderboard-body');
+        const currentUser = "{{ request.user.recruit.full_name }}";
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                // 1. UI Switch
+                filterButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // 2. Fetch Data
+                const selectedRank = btn.getAttribute('data-rank');
+                try {
+                    const response = await fetch(`/leaderboard/data/?rank=${selectedRank}`);
+                    const data = await response.json();
+                    
+                    // 3. Update Table
+                    renderTable(data.leaderboard);
+                } catch (error) {
+                    console.error("Terminal Error: Could not retrieve rankings.", error);
+                }
+            });
+        });
+
+        function renderTable(list) {
+            tableBody.innerHTML = '';
+            
+            if (list.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px;">NO DATA IN THIS CATEGORY</td></tr>`;
+                return;
+            }
+
+            list.forEach((recruit, index) => {
+                const isMe = recruit.name === currentUser ? 'current-user-row' : '';
+                const crown = index === 0 ? '<i class="fas fa-crown gold"></i>' : `<span class="rank-number">#${index + 1}</span>`;
+                
+                const row = `
+                    <tr class="${isMe}">
+                        <td class="name-col">${crown} ${recruit.name}</td>
+                        <td class="level-col">LVL ${recruit.level}</td>
+                        <td class="rank-col"><span class="rank-tag">${recruit.rank}</span></td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+    </script>
+</body>
+</html>

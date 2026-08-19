@@ -1,0 +1,215 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0d1117;
+    font-family: 'Orbitron', sans-serif;
+    color: white;
+    overflow: hidden;
+    user-select: none; /* Prevents text selection during dragging */
+}
+
+.grid-background {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: 
+        linear-gradient(rgba(13, 222, 238, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(13, 222, 238, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: -1;
+}
+
+.quest-selector-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.quest-title {
+    font-size: 3rem;
+    text-shadow: 0 0 15px #0deefc;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+
+.slider-wrapper {
+    position: relative;
+    width: 1000px; 
+    height: 450px;
+    overflow: hidden;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+}
+
+.slider-wrapper:active {
+    cursor: grabbing;
+}
+
+/* THE TRACK - Holds all 5 languages */
+.slider-container {
+    display: flex;
+    width: 166.66%; /* Logic for 5 slides total with 3 visible */
+    height: 100%;
+    will-change: transform;
+}
+
+.slide {
+    width: 20%; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    pointer-events: none; /* Allows dragging through locked boxes */
+}
+
+.slide.unlocked {
+    pointer-events: auto; /* Python is clickable */
+}
+
+
+.slide-content {
+    width: 280px;
+    height: 320px;
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 4px solid #555;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 25px;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    overflow: hidden; 
+}
+
+.language-icon { 
+    font-size: 6rem; 
+    color: #fff; 
+    flex-shrink: 0; 
+    max-width: 100%; 
+}
+
+.c-icon {
+    font-size: 3.5rem;
+    font-weight: 900;
+    border: 5px solid #fff;
+    width: 130px; 
+    height: 100px;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    flex-shrink: 0; 
+    box-sizing: border-box; 
+}
+
+.language-name { 
+    font-size: 1.4rem; 
+    color: #fff; 
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+
+.status-badge {
+    padding: 8px 25px;
+    font-size: 0.9rem;
+    border: 2px solid currentColor;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.status-badge.unlocked { 
+    color: #0deefc; 
+    background: rgba(13, 238, 252, 0.1);
+    box-shadow: 0 0 10px rgba(13, 238, 252, 0.2);
+}
+
+.status-badge.locked {
+    color: #555;
+}
+
+
+.slide.unlocked .slide-content {
+    border-color: #0deefc;
+    box-shadow: 0 0 20px rgba(13, 238, 252, 0.3);
+}
+
+.slide.unlocked .language-icon { 
+    color: #0deefc; 
+}
+
+.slide.unlocked:hover .slide-content {
+    transform: scale(1.05);
+    box-shadow: 0 0 35px #0deefc;
+}
+
+.slide.unlocked:hover .status-badge.unlocked {
+    background: #0deefc;
+    color: #000;
+}
+
+/* Locked Overlay */
+.slide.locked { 
+    opacity: 0.5; 
+    filter: grayscale(100%); 
+}
+
+.lock-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.lock-overlay i { 
+    font-size: 5rem; 
+    color: #fff; 
+}
+
+.account-link { 
+    margin-top: 30px; 
+    color: #444; 
+    font-size: 0.8rem; 
+}
+/* Error Box Styling */
+.error-box {
+    width: 100%;
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid #ff4444;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    animation: pulse-error 1.5s infinite;
+}
+
+.error-msg {
+    color: #ff4444;
+    font-size: 0.75rem;
+    text-align: center;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px #ff0000;
+}
+
+
+@keyframes pulse-error {
+    0% { box-shadow: 0 0 5px rgba(255, 68, 68, 0.2); }
+    50% { box-shadow: 0 0 15px rgba(255, 68, 68, 0.5); }
+    100% { box-shadow: 0 0 5px rgba(255, 68, 68, 0.2); }
+}
+
+
+.input-group {
+    margin-bottom: 15px;
+    width: 100%;
+}

@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Quest: Map</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'python_quiz.css' %}">
+    <style>
+        .map-grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            padding: 50px;
+            flex-wrap: wrap;
+        }
+        .box-node {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #00f2ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            position: relative;
+            text-decoration: none;
+            transition: 0.3s;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        }
+        .box-node:hover:not(.locked) {
+            box-shadow: 0 0 20px #00f2ff;
+            transform: scale(1.1);
+        }
+        .box-node.locked {
+            border-color: #444;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .box-number {
+            font-family: 'Orbitron';
+            font-size: 2rem;
+            color: #00f2ff;
+        }
+        .locked .box-number { color: #444; }
+        .lock-icon { font-size: 0.8rem; color: #ff4444; margin-top: 5px; }
+        
+        /* Connection Lines */
+        .connector {
+            width: 50px;
+            height: 2px;
+            background: #222;
+        }
+        .connector.active { background: #00f2ff; }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+
+    <nav class="top-nav" style="background: rgba(0,0,0,0.8); border-bottom: 1px solid #00f2ff; position: fixed; width: 100%; z-index: 100;">
+        <div class="nav-left" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div class="exp-container">
+                <span class="exp-label" style="color:#00f2ff; font-family:'Orbitron'; font-size: 0.7rem;">RANK: {{ user.recruit.rank }}</span>
+                <div class="exp-bar-bg" style="width: 200px; height: 10px; background: #222; border: 1px solid #00f2ff; position: relative; margin: 5px 0;">
+                    <div id="liveExpFill" style="height: 100%; background: #00f2ff; width: {{ user.recruit.progress_percentage }}%;"></div>
+                </div>
+                <span id="liveExpText" style="color: #00f2ff; font-size: 0.8rem;">{{ user.recruit.exp }} / {{ user.recruit.exp_required }} XP</span>
+            </div>
+        </div>
+    </nav>
+
+    <main style="padding-top: 150px; text-align: center;">
+        <h1 style="color: #00f2ff; letter-spacing: 10px; font-family: 'Orbitron';">PYTHON_QUEST: {{ round_name|upper }}</h1>
+        
+        <div class="map-grid">
+            {% for i in "123456"|make_list %}
+                {% with box_num=forloop.index %}
+                    
+                    {% if box_num <= user.recruit.level %}
+                        <a href="/python-quest/level/{{ box_num }}/" class="box-node">
+                            <span class="box-number">{{ box_num }}</span>
+                        </a>
+                    {% else %}
+                        <div class="box-node locked">
+                            <span class="box-number">{{ box_num }}</span>
+                            <span class="lock-icon"><i class="fas fa-lock"></i> LVL {{ box_num }}</span>
+                        </div>
+                    {% endif %}
+
+                    {% if not forloop.last %}
+                        <div class="connector {% if box_num < user.recruit.level %}active{% endif %}"></div>
+                    {% endif %}
+
+                {% endwith %}
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 50px;">
+            <a href="{% url 'main_menu' %}" class="corner-back-btn" style="position: static; text-decoration: none;">LOGOUT TERMINAL</a>
+        </div>
+    </main>
+</body>
+</html>

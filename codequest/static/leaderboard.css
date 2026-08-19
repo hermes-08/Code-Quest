@@ -1,0 +1,131 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #050a0f;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.grid-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+    z-index: -1;
+}
+
+.leaderboard-container {
+    width: 90%;
+    max-width: 900px;
+    background: rgba(0, 20, 30, 0.8);
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+    padding: 30px;
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+    padding-bottom: 20px;
+}
+
+.glitch-text {
+    color: #00f2ff;
+    letter-spacing: 5px;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    margin: 0 0 20px 0;
+}
+
+.rank-filters {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 1px solid #00f2ff;
+    color: #00f2ff;
+    padding: 5px 15px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.filter-btn.active, .filter-btn:hover {
+    background: #00f2ff;
+    color: #050a0f;
+    box-shadow: 0 0 15px #00f2ff;
+}
+
+.table-wrapper {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.leaderboard-table th {
+    padding: 15px;
+    color: #00f2ff;
+    font-size: 0.8rem;
+    border-bottom: 2px solid rgba(0, 242, 255, 0.3);
+}
+
+.leaderboard-table td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+}
+
+.current-user-row {
+    background: rgba(0, 242, 255, 0.1);
+    border-left: 4px solid #00f2ff;
+}
+
+.gold { color: #ffcc00; margin-right: 10px; }
+
+.rank-tag {
+    background: rgba(0, 242, 255, 0.1);
+    padding: 4px 10px;
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    font-size: 0.7rem;
+    border-radius: 4px;
+}
+
+.footer-actions {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.back-btn {
+    text-decoration: none;
+    color: #00f2ff;
+    font-size: 0.8rem;
+    border: 1px solid #00f2ff;
+    padding: 10px 20px;
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(0, 242, 255, 0.1);
+    box-shadow: 0 0 10px #00f2ff;
+}

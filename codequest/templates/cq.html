@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codequest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Orbitron:wght@900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'cq.css' %}">
+</head>
+<body>
+  <div class="main-container">
+    <div class="main-menu" id="menu">
+        <div class="boxtitle">
+            <h1 class="title">CODE QUEST</h1>
+        </div>
+        <div class="boxwelcome">
+            <p class="welcome">WELCOME TO CODE QUEST!</p>
+            <button class="play-btn" onclick="showAuth()">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="auth-screen" id="auth-screen" style="display: none;">
+        
+        <div id="auth-choice">
+            <h2 class="auth-title">IDENTIFICATION REQUIRED</h2>
+            <div class="auth-buttons">
+                <button class="auth-btn login" onclick="showForm('login-form')">LOG IN</button>
+                <button class="auth-btn signup" onclick="showForm('signup-form')">SIGN UP</button>
+            </div>
+            <p class="back-link" onclick="backToMenu()">← BACK TO MENU</p>
+        </div>
+
+        <form id="login-form" class="auth-form {% if messages %}error-shake{% endif %}" style="display: none;" method="POST" onsubmit="startLoginLoading(this)">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="login">
+            <h2 class="auth-title">ACCESS TERMINAL</h2>
+
+            {% if messages %}
+                <div class="terminal-alerts">
+                    {% for message in messages %}
+                        <div class="terminal-alert">
+                            <i class="fas fa-exclamation-circle"></i> INVALID EMAIL OR PASSWORD
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <input type="email" name="email" placeholder="EMAIL ADDRESS" required>
+            
+            <div class="password-wrapper">
+                <input type="password" id="login-pass" name="password" placeholder="PASSWORD" required style="width: 100%; padding-right: 45px; margin-bottom: 0;">
+                <i class="fas fa-eye" id="togglePass" onclick="togglePasswordVisibility()" style="position: absolute; right: 15px; cursor: pointer; color: #00f2ff; font-size: 0.9rem; z-index: 10;"></i>
+            </div>
+
+            <button type="submit" class="auth-btn" id="login-submit-btn">ENTER QUEST</button>
+            <p class="back-link" onclick="backToChoice()">← BACK</p>
+        </form>
+
+        <form id="signup-form" class="auth-form" style="display: none;" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="signup">
+            <h2 class="auth-title">NEW RECRUIT</h2>
+            <input type="text" name="full_name" placeholder="FULL NAME" required>
+            <input type="number" name="age" placeholder="AGE" required>
+            <select name="gender" required>
+                <option value="" disabled selected>GENDER</option>
+                <option value="Male">MALE</option>
+                <option value="Female">FEMALE</option>
+            </select>
+            
+            <input type="email" id="signup-email" name="email" placeholder="EMAIL" required>
+            <div id="email-error" style="color: #ff4444; font-size: 0.7rem; margin-top: -10px; margin-bottom: 10px; display: none; font-family: 'Orbitron';">
+                <i class="fas fa-exclamation-triangle"></i> RECRUIT ID ALREADY ACTIVE
+            </div>
+
+            <input type="password" name="password" placeholder="CREATE PASSWORD" required>
+            <button type="submit" id="signup-submit" class="auth-btn">CREATE ACCOUNT</button>
+            <p class="back-link" onclick="backToChoice()">← BACK</p>
+        </form>
+    </div>
+</div>
+
+<script>
+    function showAuth() {
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('auth-choice').style.display = 'block';
+    }
+
+    function showForm(formId) {
+        document.getElementById('auth-choice').style.display = 'none';
+        document.getElementById(formId).style.display = 'flex';
+    }
+
+    function backToChoice() {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('signup-form').style.display = 'none';
+        document.getElementById('auth-choice').style.display = 'block';
+    }
+
+    function backToMenu() {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('menu').style.display = 'flex';
+    }
+
+    window.onload = function() {
+        {% if messages %}
+            showAuth();
+            showForm('login-form');
+            document.getElementById('login-pass').focus();
+        {% endif %}
+    };
+
+    function togglePasswordVisibility() {
+        const passInput = document.getElementById('login-pass');
+        const eyeIcon = document.getElementById('togglePass');
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            passInput.type = 'password';
+            eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    function startLoginLoading(form) {
+        const btn = document.getElementById('login-submit-btn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> INITIALIZING...';
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+    }
+
+    const emailInput = document.getElementById('signup-email');
+    const errorDiv = document.getElementById('email-error');
+    const submitBtn = document.getElementById('signup-submit');
+
+    emailInput.addEventListener('input', function() {
+        const email = this.value;
+        if (email.length > 5) {
+            fetch(`/api/check-email/?username=${email}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_taken) {
+                        errorDiv.style.display = 'block';
+                        emailInput.style.borderColor = '#ff4444';
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.style.cursor = 'not-allowed';
+                    } else {
+                        errorDiv.style.display = 'none';
+                        emailInput.style.borderColor = '#00f2ff';
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.style.cursor = 'pointer';
+                    }
+                })
+                .catch(err => console.error("Terminal link broken:", err));
+        }
+    });
+</script>
+</body>
+</html>

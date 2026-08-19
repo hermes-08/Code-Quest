@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Quest: Box {{ box_num }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'python_quiz.css' %}">
+</head>
+<body>
+    <div class="grid-background"></div>
+
+    <nav class="top-nav" style="background: rgba(0,0,0,0.8); border-bottom: 1px solid #00f2ff; position: fixed; width: 100%; z-index: 100;">
+        <div class="nav-left" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div class="exp-container">
+                <span class="exp-label" style="color:#00f2ff; font-family:'Orbitron'; font-size: 0.7rem;">RANK: {{ user.recruit.rank }}</span>
+                <div class="exp-bar-bg" style="width: 200px; height: 10px; background: #222; border: 1px solid #00f2ff; position: relative; margin: 5px 0;">
+                    <div id="liveExpFill" style="height: 100%; background: #00f2ff; width: {{ user.recruit.progress_percentage }}%; transition: width 0.5s;"></div>
+                </div>
+                <span id="liveExpText" style="color: #00f2ff; font-size: 0.8rem;">{{ user.recruit.exp }} / {{ user.recruit.exp_required }} XP</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="quiz-container" style="padding-top: 120px; max-width: 800px; margin: 0 auto; text-align: center;">
+        
+        {% for q in questions %}
+        <div class="question-wrapper" id="q-block-{{ forloop.index }}" style="{% if not forloop.first %}display: none;{% endif %}">
+            <div class="question-header" style="border: 1px solid #00f2ff; padding: 30px; background: rgba(0,0,0,0.8); margin-bottom: 40px;">
+                <span style="color: #00f2ff; font-size: 0.8rem; letter-spacing: 4px;">MISSION: BOX_{{ box_num }} | QUESTION {{ forloop.index }}/5</span>
+                <h1 style="margin-top: 20px; font-size: 1.5rem; line-height: 1.6; color: #fff;">{{ q.q }}</h1>
+            </div>
+
+            <div class="input-area">
+                {% if q.type == 'text' %}
+                    <input type="text" id="ans-{{ q.id }}" class="terminal-input" 
+                           placeholder="Type your answer..." 
+                           style="background: #000; border: 1px solid #00f2ff; color: #00f2ff; padding: 15px; width: 80%; font-family: 'Orbitron'; text-align: center; outline: none;">
+                    <br><br>
+                    <button class="option-btn" onclick="checkTextAnswer('{{ q.id }}', '{{ q.a }}', {{ forloop.index }})">SUBMIT CODE</button>
+                {% else %}
+                    <div class="options-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; justify-items: center;">
+                        {% for opt in q.options %}
+                        <button class="option-btn" onclick="processResult('{{ q.id }}', '{{ opt }}', '{{ q.a }}', {{ forloop.index }})" style="width: 100%; max-width: 250px;">
+                            {{ opt }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="resultOverlay" style="display: none; margin-top: 40px; padding: 30px; border: 2px solid #00f2ff; background: #000; box-shadow: 0 0 20px #00f2ff;">
+            <h2 id="statusText" style="letter-spacing: 5px; font-weight: 900; margin-bottom: 10px;"></h2>
+            <p id="rewardText" style="margin: 15px 0; color: #ccc;"></p>
+            
+            <div id="actionButtons" style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                </div>
+        </div>
+    </main>
+
+<script>
+    window.onload = () => {
+        const initialProgress = "{{ user.recruit.progress_percentage }}";
+        const liveBar = document.getElementById('liveExpFill');
+        if (liveBar) {
+            liveBar.style.width = initialProgress + "%";
+        }
+    };
+
+    function checkTextAnswer(qId, actual, index) {
+        const userInput = document.getElementById('ans-' + qId).value.trim();
+        const isCorrect = userInput.toLowerCase() === actual.toLowerCase();
+        processResult(qId, userInput, actual, index, isCorrect);
+    }
+
+    function processResult(qId, selected, actual, index, isCorrect = null) {
+        if (isCorrect === null) isCorrect = (selected === actual);
+        
+        fetch("{% url 'submit_quiz' %}", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json", 
+                "X-CSRFToken": "{{ csrf_token }}" 
+            },
+            body: JSON.stringify({ 
+                level: parseInt("{{ box_num }}"), 
+                is_correct: isCorrect 
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const overlay = document.getElementById('resultOverlay');
+            const status = document.getElementById('statusText');
+            const reward = document.getElementById('rewardText');
+            const btnArea = document.getElementById('actionButtons');
+            
+            btnArea.innerHTML = "";
+
+            // Update Global XP Bar
+            const percentage = (data.total_exp / data.next_level_at) * 100;
+            document.getElementById('liveExpFill').style.width = percentage + "%";
+            document.getElementById('liveExpText').innerText = data.total_exp + " / " + data.next_level_at + " XP";
+
+            if (isCorrect) {
+                status.innerText = "MISSION SUCCESS";
+                status.style.color = "#00f2ff";
+                reward.innerText = "+" + data.added_exp + " EXP GAINED.";
+                
+                // On Success: Just one button to go BACK to the map
+                btnArea.innerHTML = `
+                    <a href="{% url 'python_start' %}" class="corner-back-btn" style="position:static; text-decoration:none;">
+                        <i class="fas fa-chevron-left"></i> BACK
+                    </a>`;
+            } else {
+                status.innerText = "MISSION FAILED";
+                status.style.color = "#ff4444";
+                reward.innerText = "Target code was: " + actual;
+
+                // On Failure: TRY AGAIN or BACK
+                btnArea.innerHTML = `
+                    <button onclick="location.reload()" class="corner-back-btn" style="position:static; cursor:pointer; border-color:#ff4444; color:#ff4444;">
+                        RETRY
+                    </button>
+                    <a href="{% url 'python_start' %}" class="corner-back-btn" style="position:static; text-decoration:none;">
+                        BACK
+                    </a>`;
+            }
+            
+            overlay.style.display = "block";
+        })
+        .catch(err => console.error("Terminal Error:", err));
+    }
+</script>
+</body>
+</html>

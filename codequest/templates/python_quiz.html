@@ -1,0 +1,421 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Quest - Mission Map</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'python_quiz.css' %}">
+    <style>
+        body { overflow-x: hidden; }
+
+        .map-viewport {
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            padding: 40px 0;
+        }
+
+        .map-filmstrip {
+            display: flex;
+            width: 300vw; 
+            transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .map-wrapper {
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        /* ROUND INDICATOR (TOP) */
+        .round-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: 'Orbitron', sans-serif;
+            color: #00f2ff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        #roundName {
+            transition: all 0.3s ease;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+        }
+
+        .dot-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border: 1px solid #00f2ff;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #00f2ff;
+            box-shadow: 0 0 10px #00f2ff;
+        }
+
+        /* NAVIGATION BUTTONS */
+        .nav-control {
+            position: fixed;
+            top: 55%;
+            transform: translateY(-50%);
+            background: rgba(0, 242, 255, 0.05);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            color: #00f2ff;
+            padding: 30px 10px;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .nav-control:hover {
+            background: rgba(0, 242, 255, 0.2);
+            border-color: #00f2ff;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        }
+
+        .nav-next { right: 20px; border-radius: 10px 0 0 10px; }
+        .nav-prev { left: 20px; border-radius: 0 10px 10px 0; }
+        .nav-control.hidden { opacity: 0; pointer-events: none; }
+
+        /* EXP BAR */
+        .exp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00f2ff, #0077ff);
+            width: 0%; 
+            transition: width 1.5s cubic-bezier(0.1, 0.5, 0.1, 1);
+            box-shadow: 0 0 15px #00f2ff;
+        }
+
+        .difficulty-tag.medium { color: #ffcc00; text-shadow: 0 0 15px #ffcc00; }
+        .difficulty-tag.hard { color: #ff4444; text-shadow: 0 0 15px #ff4444; }
+
+        /* STAT CARD STYLING */
+        .sidebar-stat-card {
+            background: rgba(0, 242, 255, 0.05);
+            border-left: 3px solid #00f2ff;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+        }
+        .sidebar-stat-card p { margin: 8px 0; color: #fff; }
+        .sidebar-stat-card strong { color: #00f2ff; margin-right: 5px; }
+
+        .blue-btn {
+            text-decoration: none;
+            text-align: center;
+            border: 1px solid #00f2ff !important;
+            color: #00f2ff !important;
+            display: block;
+            padding: 12px;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            background: transparent;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+        .blue-btn:hover {
+            background: rgba(0, 242, 255, 0.2) !important;
+            box-shadow: 0 0 15px #00f2ff !important;
+            color: #fff !important;
+        }
+
+        .logout-btn {
+            background: transparent;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            padding: 12px;
+            border: 1px solid #ff4444 !important;
+            color: #ff4444 !important;
+            transition: all 0.3s;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            width: 100%;
+        }
+        .logout-btn:hover {
+            background: rgba(255, 68, 68, 0.2);
+            box-shadow: 0 0 15px #ff4444;
+            color: #fff !important;
+        }
+
+        .level-node, .level-node:hover, .level-node:visited {
+            text-decoration: none !important;
+            outline: none;
+        }
+
+        .node-box {
+            text-decoration: none !important;
+            color: inherit;
+        }
+
+        /* --- ROUND LOCK STYLES --- */
+        .locked-section {
+            filter: grayscale(1) blur(2px);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .section-lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .section-lock-overlay span {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+            text-transform: uppercase;
+        }
+
+        /* --- LOCK FEATURE STYLES --- */
+        .level-node.locked {
+            filter: grayscale(1);
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .lock-icon {
+            position: absolute;
+            bottom: -15px;
+            font-size: 0.7rem;
+            color: #ff4444;
+        }
+
+        .path-line.active {
+            background: #00f2ff !important;
+            box-shadow: 0 0 10px #00f2ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+    
+    <nav class="top-nav">
+        <div class="nav-left">
+            <button class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+            <div class="exp-container">
+                <span class="level-badge">LVL {{ user.recruit.unlocked_level }}</span>
+                <div class="exp-bar-bg">
+                    <div class="exp-bar-fill" id="expFill"></div>
+                    <span class="exp-number" id="expText">0 / 100</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <span class="lang-title">PYTHON QUEST</span>
+        </div>
+    </nav>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-user-circle profile-icon"></i>
+            <h3>{{ user.recruit.full_name }}</h3>
+        </div>
+        
+        <div class="sidebar-info">
+            <div class="sidebar-stat-card">
+                <p><strong>RANK:</strong> {{ user.recruit.rank }}</p>
+                <p><strong>AGE:</strong> {{ user.recruit.age }}</p>
+                <p><strong>UNLOCKED:</strong> Level {{ user.recruit.unlocked_level }}</p>
+            </div>
+        </div>
+        
+        <div class="sidebar-actions" style="margin-top: auto; padding-bottom: 30px; display: flex; flex-direction: column; gap: 12px; padding: 0 20px;">
+            <a href="{% url 'leaderboard' %}" class="blue-btn">
+                <i class="fas fa-trophy"></i> LEADERBOARD
+            </a>
+            
+            <form action="{% url 'logout' %}" method="post" style="width: 100%;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <i class="fas fa-power-off"></i> LOGOUT
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <button class="nav-control nav-prev hidden" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+    <button class="nav-control nav-next" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+
+    <div class="round-indicator">
+        <span id="roundName">Easy Round</span>
+        <div class="dot-container">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <div class="map-viewport">
+        <div class="map-filmstrip" id="filmstrip">
+            
+            <div class="map-wrapper">
+                <h2 class="difficulty-tag">EASY</h2>
+                <div class="level-path">
+                    <a href="{% url 'level_one_quiz' 1 %}" class="level-node unlocked"><div class="node-box">1</div></a>
+                    
+                    <div class="path-line {% if user.recruit.unlocked_level >= 2 %}active{% endif %}"></div>
+                    
+                    {% if user.recruit.unlocked_level >= 2 %}
+                        <a href="{% url 'level_one_quiz' 2 %}" class="level-node unlocked"><div class="node-box">2</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">2</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+
+                    <div class="path-line {% if user.recruit.unlocked_level >= 3 %}active{% endif %}"></div>
+
+                    {% if user.recruit.unlocked_level >= 3 %}
+                        <a href="{% url 'level_one_quiz' 3 %}" class="level-node unlocked"><div class="node-box">3</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">3</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="map-wrapper {% if user.recruit.unlocked_level < 4 %}locked-section{% endif %}">
+                <h2 class="difficulty-tag medium">MEDIUM</h2>
+                <div class="level-path">
+                    {% if user.recruit.unlocked_level >= 4 %}
+                        <a href="{% url 'level_one_quiz' 4 %}" class="level-node unlocked"><div class="node-box">4</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">4</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+
+                    <div class="path-line {% if user.recruit.unlocked_level >= 5 %}active{% endif %}"></div>
+
+                    {% if user.recruit.unlocked_level >= 5 %}
+                        <a href="{% url 'level_one_quiz' 5 %}" class="level-node unlocked"><div class="node-box">5</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">5</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+
+                    <div class="path-line {% if user.recruit.unlocked_level >= 6 %}active{% endif %}"></div>
+
+                    {% if user.recruit.unlocked_level >= 6 %}
+                        <a href="{% url 'level_one_quiz' 6 %}" class="level-node unlocked"><div class="node-box">6</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">6</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+                </div>
+                {% if user.recruit.unlocked_level < 4 %}
+                <div class="section-lock-overlay"><span><i class="fas fa-lock"></i> REACH LVL 4</span></div>
+                {% endif %}
+            </div>
+
+            <div class="map-wrapper {% if user.recruit.unlocked_level < 7 %}locked-section{% endif %}">
+                <h2 class="difficulty-tag hard">HARD</h2>
+                <div class="level-path">
+                    {% if user.recruit.unlocked_level >= 7 %}
+                        <a href="{% url 'level_one_quiz' 7 %}" class="level-node unlocked"><div class="node-box">7</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">7</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+
+                    <div class="path-line {% if user.recruit.unlocked_level >= 8 %}active{% endif %}"></div>
+
+                    {% if user.recruit.unlocked_level >= 8 %}
+                        <a href="{% url 'level_one_quiz' 8 %}" class="level-node unlocked"><div class="node-box">8</div></a>
+                    {% else %}
+                        <div class="level-node locked"><div class="node-box">8</div><i class="fas fa-lock lock-icon"></i></div>
+                    {% endif %}
+                </div>
+                {% if user.recruit.unlocked_level < 7 %}
+                <div class="section-lock-overlay"><span><i class="fas fa-lock"></i> REACH LVL 7</span></div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <a href="{% url 'quest_selection' %}" class="corner-back-btn">
+        <i class="fas fa-chevron-left"></i> BACK
+    </a>
+
+    <script>
+        // EXP LOGIC
+        const progressPercent = parseFloat("{{ user.recruit.progress_percentage|default:0 }}");
+        const currentExp = parseInt("{{ user.recruit.exp|default:0 }}");
+        const expNeeded = parseInt("{{ user.recruit.exp_required|default:100 }}");
+
+        window.addEventListener('load', () => {
+            const fill = document.getElementById('expFill');
+            const text = document.getElementById('expText');
+            setTimeout(() => {
+                fill.style.width = progressPercent + "%";
+                text.innerText = currentExp + " / " + expNeeded;
+            }, 100);
+        });
+
+        // SLIDER
+        let currentPos = 0;
+        const filmstrip = document.getElementById('filmstrip');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const roundNames = ["Easy Round", "Medium Round", "Hard Round"];
+        const dots = document.querySelectorAll('.dot');
+        const roundLabel = document.getElementById('roundName');
+
+        function updateUI() {
+            filmstrip.style.transform = `translateX(-${currentPos * 100}vw)`;
+            roundLabel.innerText = roundNames[currentPos];
+            
+            if (currentPos === 1) roundLabel.style.color = "#ffcc00"; 
+            else if (currentPos === 2) roundLabel.style.color = "#ff4444"; 
+            else roundLabel.style.color = "#00f2ff"; 
+
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === currentPos));
+            prevBtn.classList.toggle('hidden', currentPos === 0);
+            nextBtn.classList.toggle('hidden', currentPos === 2);
+        }
+
+        nextBtn.addEventListener('click', () => { if (currentPos < 2) { currentPos++; updateUI(); } });
+        prevBtn.addEventListener('click', () => { if (currentPos > 0) { currentPos--; updateUI(); } });
+
+        // SIDEBAR TOGGLE
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

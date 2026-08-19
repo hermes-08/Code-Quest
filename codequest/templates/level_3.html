@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 3: Loops & Logic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'python_quiz.css' %}">
+</head>
+<body>
+    <div class="grid-background"></div>
+
+    <nav class="top-nav" style="background: rgba(0,0,0,0.8); border-bottom: 1px solid #00f2ff;">
+        <div class="nav-left" style="padding: 10px 20px;">
+            <div class="exp-container">
+                <span class="exp-label">EXP</span>
+                <div class="exp-bar-bg" style="width: 200px; height: 10px; background: #222; border: 1px solid #00f2ff; position: relative;">
+                    <div id="liveExpFill" style="height: 100%; background: #00f2ff; width: 0%; transition: width 0.5s;"></div>
+                </div>
+                <span id="liveExpText" style="color: #00f2ff; margin-left: 10px; font-size: 0.8rem;">{{ user.recruit.exp }} / 100</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="quiz-container" style="padding-top: 80px; max-width: 800px; margin: 0 auto; text-align: center;">
+        <div class="question-header" style="border: 1px solid #00f2ff; padding: 30px; background: rgba(0,0,0,0.8); margin-bottom: 40px;">
+            <span style="color: #00f2ff; font-size: 0.8rem; letter-spacing: 4px;">MISSION: LOOPS_03</span>
+            <h1 style="margin-top: 20px; font-size: 1.5rem; line-height: 1.6; color: #fff;">Which of the following correctly loops 5 times (from 0 to 4)?</h1>
+        </div>
+
+        <div class="options-grid" id="optionsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <button class="option-btn" onclick="processResult(this, false)">
+                <span class="option-letter">A</span> <code>for i in 5:</code>
+            </button>
+            <button class="option-btn" onclick="processResult(this, false)">
+                <span class="option-letter">B</span> <code>for i range(5):</code>
+            </button>
+            <button class="option-btn" onclick="processResult(this, true)">
+                <span class="option-letter">C</span> <code>for i in range(5):</code>
+            </button>
+            <button class="option-btn" onclick="processResult(this, false)">
+                <span class="option-letter">D</span> <code>loop i in range(5):</code>
+            </button>
+        </div>
+
+        <div id="resultOverlay" style="display: none; margin-top: 40px; padding: 30px; border: 2px solid #00f2ff; background: #000; box-shadow: 0 0 20px #00f2ff;">
+            <h2 id="statusText" style="letter-spacing: 5px; font-weight: 900;"></h2>
+            <p id="rewardText" style="margin: 15px 0; color: #ccc;"></p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                <button onclick="location.reload()" class="corner-back-btn" style="position: static; cursor: pointer;">RETRY MISSION</button>
+                <a href="{% url 'python_start' %}" class="corner-back-btn" style="position: static; border-color: #00f2ff; text-decoration: none; display: inline-block;">RETURN TO MAP</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        window.onload = () => {
+            const currentExp = "{{ user.recruit.exp }}";
+            document.getElementById('liveExpFill').style.width = currentExp + "%";
+        };
+
+        function processResult(btn, isCorrect) {
+            //Level ID set to 3 for tiered +40 EXP
+            fetch("{% url 'submit_quiz' %}", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json", 
+                    "X-CSRFToken": "{{ csrf_token }}" 
+                },
+                body: JSON.stringify({ 
+                    level: 3, 
+                    is_correct: isCorrect 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const grid = document.getElementById('optionsGrid');
+                const overlay = document.getElementById('resultOverlay');
+                const status = document.getElementById('statusText');
+                const reward = document.getElementById('rewardText');
+                const liveBar = document.getElementById('liveExpFill');
+                const liveText = document.getElementById('liveExpText');
+
+                document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+
+                if (isCorrect) {
+                    btn.style.backgroundColor = "rgba(0, 242, 255, 0.2)";
+                    btn.style.borderColor = "#00f2ff";
+                    status.innerText = "MISSION SUCCESS";
+                    status.style.color = "#00f2ff";
+                    // Shows +40 EXP
+                    reward.innerText = `YOU GAINED +${data.added_exp} EXP.`;
+                    
+                    liveBar.style.width = data.total_exp + "%";
+                    liveText.innerText = `${data.total_exp} / 100`;
+                } else {
+                    btn.style.backgroundColor = "rgba(255, 68, 68, 0.2)";
+                    btn.style.borderColor = "#ff4444";
+                    status.innerText = "MISSION FAILED";
+                    status.style.color = "#ff4444";
+                    reward.innerText = "HINT: Use 'for variable in range(n):' to repeat code.";
+                }
+
+                grid.style.opacity = "0.3";
+                overlay.style.display = "block";
+            })
+            .catch(error => console.error('Error syncing data:', error));
+        }
+    </script>
+</body>
+</html>
